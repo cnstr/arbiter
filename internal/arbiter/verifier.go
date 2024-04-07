@@ -4,10 +4,14 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"log"
+
+	"github.com/cnstr/arbiter/v2/internal/utils"
 )
 
+var TlsEnv = utils.LoadTlsEnv()
+
 // We assume the TLS certificate is a child of the Canister CA
-func VerifyTls(cert string, pool *x509.CertPool) bool {
+func VerifyTls(cert string) bool {
 	certBytes := []byte(cert)
 	block, _ := pem.Decode(certBytes)
 
@@ -18,7 +22,7 @@ func VerifyTls(cert string, pool *x509.CertPool) bool {
 	}
 
 	opts := x509.VerifyOptions{
-		Roots: pool,
+		Roots: TlsEnv.CertPool,
 	}
 
 	_, err = x509Cert.Verify(opts)
