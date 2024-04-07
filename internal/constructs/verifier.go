@@ -1,4 +1,4 @@
-package arbiter
+package constructs
 
 import (
 	"crypto/x509"
@@ -14,6 +14,11 @@ var TlsEnv = utils.LoadTlsEnv()
 func VerifyTls(cert string) bool {
 	certBytes := []byte(cert)
 	block, _ := pem.Decode(certBytes)
+
+	if block == nil {
+		log.Println("[arbiter] Recieved invalid TLS certificate")
+		return false
+	}
 
 	x509Cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
