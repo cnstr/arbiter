@@ -1,71 +1,47 @@
 package utils
 
 import (
+	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
 	"log"
 	"os"
 	"strings"
 )
 
-type TlsEnv struct {
-	KeyPath  string
-	CertPath string
-	CertPool *x509.CertPool
+func LoadRootPaths() (string, string) {
+	var keyPath = ensureValidEnv("CANISTER_ROOT_KEY")
+	var certPath = ensureValidEnv("CANISTER_ROOT_CERT")
+
+	return keyPath, certPath
 }
 
-func LoadTlsEnv() TlsEnv {
-	var keyPath = os.Getenv("ROOT_CA_KEY")
-	var certPath = os.Getenv("ROOT_CA_CERT")
-
-	if strings.TrimSpace(keyPath) == "" {
-		log.Fatal("[arbiter] Missing ROOT_CA_KEY environment variable")
-		panic("Missing ROOT_CA_KEY environment variable")
-	}
-
-	if strings.TrimSpace(certPath) == "" {
-		log.Fatal("[arbiter] Missing ROOT_CA_CERT environment variable")
-		panic("Missing ROOT_CA_CERT environment variable")
-	}
-
-	// Check if the files exist
-	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		log.Fatal("[arbiter] Key file does not exist")
-		panic("Key file does not exist")
-	}
-
-	if _, err := os.Stat(certPath); os.IsNotExist(err) {
-		log.Fatal("[arbiter] Cert file does not exist")
-		panic("Cert file does not exist")
-	}
-
-	// Read and decode the certificate from PEM
-	file, err := os.ReadFile(certPath)
+func LoadTrustChain(keyPath string, certPath string) x509.CertPool {
+	caCert, err := os.ReadFile(certPath)
 	if err != nil {
-		log.Fatal("[arbiter] Could not read cert file")
-		panic("Could not read cert file")
+		log.Fatal("[arbiter] Could not load CA key pair:", err)
 	}
 
-	block, _ := pem.Decode(file)
-	if block == nil {
-		log.Fatal("[arbiter] Could not decode cert file")
-		panic("Could not decode cert file")
+	caCertPool := x509.NewCertPool()
+	ok := caCertPool.AppendCertsFromPEM(caCert)
+	if !ok {
+		log.Fatal("[arbiter] Could not append CA certificate to pool")
 	}
 
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		log.Fatal("[arbiter] Could not parse cert file")
-		panic("Could not parse cert file")
+	return *caCertPool
+}
+
+func ensureValidEnv(name string) string {
+	out := os.Getenv(name)
+	if strings.TrimSpace(out) == "" {
+		log.Fatal("[arbiter] Missing ", name, " environment variable")
 	}
 
-	// Create a certificate pool
-	certPool := x509.NewCertPool()
-	certPool.AddCert(cert)
+	return out
+}
 
-	log.Println("[arbiter] TLS key and cert loaded successfully")
-	return TlsEnv{
-		KeyPath:  keyPath,
-		CertPath: certPath,
-		CertPool: certPool,
+func GetTlsConfig(caCertPool x509.CertPool) *tls.Config {
+	return &tls.Config{
+		ClientCAs:  &caCertPool,
+		ClientAuth: tls.RequireAndVerifyClientCert,
 	}
 }
