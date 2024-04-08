@@ -28,10 +28,34 @@ In order to join the peering network, there are a few requirements that need to 
 - Allow WebSocket connections to `peer-t1.canister.me`, `peer-t2.canister.me`, and `peer-t3.canister.me`.
 
 Canister's Peering Network is secured by a custom certificate authority to ensure that only approved peers can participate.
-In order to join, you'll need to generate a certificate signing request (CSR) and email it to [support@canister.me](mailto:support@canister.me).
-Send that email with the subject `PEERING REQUEST: <Name>` where name is what you want to name the peer.
-Make sure to provide adequate information as to who you are, where the peer is being hosted, etc.
-If approved, we'll get back to you with a signed certificate which you can use to follow the next steps.
+In order to join, you'll need to follow the steps below to generate a certificate signing request which you can send to us.
+To generate a certificate signing request, you'll need `openssl` and the following `config.conf` file:
+
+```conf
+[req]
+default_bits = 4096
+prompt = no
+encrypt_key = no
+default_md = sha512
+distinguished_name = req_distinguished_name
+
+[req_distinguished_name]
+C = US
+ST = New York
+O = Canister
+OU = Indexer
+CN = <name>
+```
+
+Remember to replace `<name>` with the name of the peer. And then run the following command:
+```sh
+openssl req -new -keyout <name>.key -out <name>.csr -config config.conf
+```
+
+Once you've generated the files, keep the `.key` file safe and send the `.csr` file to us.
+Email [support@canister.me](mailto:support@canister.me) with the subject: `[PEER REQUEST] Indexer: <name>`.
+Attach the `.csr` file, an explanation of your infrastructure and your relevance within the community.
+We'll get back to you with a `.crt` file that you can use with the instructions below.
 
 ## Running a Peer
 TODO
