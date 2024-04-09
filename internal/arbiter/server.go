@@ -15,14 +15,16 @@ func StartServer() {
 	tlsConfig := utils.GetTlsConfig(caCertPool)
 
 	peerStore := NewPeerStore()
+	wsHandler := GetHandlerFunc(peerStore)
+
 	server := &http.Server{
 		Addr:      ":8443",
 		TLSConfig: tlsConfig,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Get the TLS certificate from the request
-			cert := r.TLS.PeerCertificates[0]
-			// print cert hash
-			log.Println("[http] Received request from:", cert.SerialNumber)
+			if r.URL.Path == "/connect" {
+				wsHandler(w, r)
+				return
+			}
 
 			// Return the peers as a JSON response
 			peers := peerStore.GetAllPeers()
@@ -39,14 +41,6 @@ func StartServer() {
 			w.Write(data)
 		}),
 	}
-
-	peerStore.AddPeer(&Peer{
-		SerialNumber: "test1",
-	})
-
-	peerStore.AddPeer(&Peer{
-		SerialNumber: "test2",
-	})
 
 	stop := ScheduleManifests()
 	log.Println("[http] Server started on:", server.Addr)
