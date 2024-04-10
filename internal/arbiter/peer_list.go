@@ -3,6 +3,9 @@ package arbiter
 import (
 	"crypto/x509"
 	"log"
+	"sync"
+
+	"github.com/gorilla/websocket"
 )
 
 type State string
@@ -17,6 +20,7 @@ const (
 type Peer struct {
 	Id                string
 	State             State
+	Connection        *websocket.Conn `json:"-"`
 	Certificate       *x509.Certificate
 	AssignedManifests []Manifest
 }
