@@ -28,6 +28,8 @@ type Peer struct {
 type PeerStore struct {
 	Manifests []Manifest
 	Peers     map[string]*Peer
+	PeerArray []*Peer
+	Mutex     sync.Mutex
 }
 
 // We have a mutable list of peers globally available for the http handler
@@ -36,16 +38,33 @@ type PeerStore struct {
 func NewPeerStore() *PeerStore {
 	return &PeerStore{
 		Peers:     make(map[string]*Peer),
+		PeerArray: []*Peer{},
 		Manifests: fetchManifests(),
 	}
 }
 
 func (ps *PeerStore) AddPeer(peer *Peer) {
+	if ps.Peers[peer.Id] != nil {
+		return
+	}
+
+	ps.Mutex.Lock()
+	defer ps.Mutex.Unlock()
+
 	ps.Peers[peer.Id] = peer
+	ps.PeerArray = append(ps.PeerArray, peer)
+
 	ps.RebalancePeers()
 }
 
 func (ps *PeerStore) UpdatePeerState(Id string, state State) {
+	if ps.Peers[Id].State == state {
+		return
+	}
+
+	ps.Mutex.Lock()
+	defer ps.Mutex.Unlock()
+
 	ps.Peers[Id].State = state
 	ps.RebalancePeers()
 }
@@ -55,7 +74,7 @@ func (ps *PeerStore) RebalancePeers() {
 	// If there are no ready peers, then we can't rebalance
 	shouldRebalance := false
 	readyPeers := []*Peer{}
-	for _, peer := range ps.Peers {
+	for _, peer := range ps.PeerArray {
 		if peer.State == Ready {
 			readyPeers = append(readyPeers, peer)
 
@@ -67,8 +86,6 @@ func (ps *PeerStore) RebalancePeers() {
 
 	peerLength := len(readyPeers)
 	if peerLength == 0 {
-		// Sentry if we are long running?
-		log.Println("[scheduler] No peers ready to rebalance")
 		return
 	}
 
@@ -111,12 +128,7 @@ func (ps *PeerStore) RebalancePeers() {
 }
 
 func (ps *PeerStore) GetAllPeers() []*Peer {
-	result := make([]*Peer, 0, len(ps.Peers))
-	for _, peer := range ps.Peers {
-		result = append(result, peer)
-	}
-
-	return result
+	return ps.PeerArray
 }
 
 func (ps *PeerStore) GetAllPeerJobs() map[string][]Manifest {
