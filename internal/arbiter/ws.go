@@ -23,12 +23,6 @@ func GetHandlerFunc(PeerStore *PeerStore) func(w http.ResponseWriter, r *http.Re
 			return
 		}
 
-		PeerStore.AddPeer(&Peer{
-			Id:          cert.SerialNumber.String(),
-			State:       NotReady,
-			Certificate: cert,
-		})
-
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("[http] Could not upgrade connection:", err)
@@ -36,6 +30,13 @@ func GetHandlerFunc(PeerStore *PeerStore) func(w http.ResponseWriter, r *http.Re
 
 			return
 		}
+
+		PeerStore.AddPeer(&Peer{
+			Id:          cert.SerialNumber.String(),
+			State:       NotReady,
+			Connection:  conn,
+			Certificate: cert,
+		})
 
 		conn.SetPingHandler(func(data string) error {
 			state := State(data)
@@ -58,6 +59,7 @@ func GetHandlerFunc(PeerStore *PeerStore) func(w http.ResponseWriter, r *http.Re
 				_, _, err := conn.ReadMessage()
 				if err != nil {
 					log.Println("[ws] Could not read message:", err)
+					PeerStore.UpdatePeerState(cert.SerialNumber.String(), Disconnected)
 					break
 				}
 
