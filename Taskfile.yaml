@@ -4,9 +4,9 @@ tasks:
   dev:
     desc: 'Run the arbiter in development mode'
     env:
-      CANISTER_ROOT_CERT:
-        sh: realpath ./certs/cnstr_ca.crt
-      CANISTER_ROOT_KEY:
-        sh: realpath ./certs/cnstr_ca.key
+      ROOT_CERT:
+        sh: realpath ./certs/root.crt
+      ROOT_KEY:
+        sh: realpath ./certs/root.key
     cmds:
       - go run ./cmd/arbiter

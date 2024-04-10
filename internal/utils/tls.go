@@ -9,8 +9,8 @@ import (
 )
 
 func LoadRootPaths() (string, string) {
-	var keyPath = ensureValidEnv("CANISTER_ROOT_KEY")
-	var certPath = ensureValidEnv("CANISTER_ROOT_CERT")
+	var keyPath = pickOr("ROOT_KEY", "/etc/ssl/private/root.key")
+	var certPath = pickOr("ROOT_CERT", "/etc/ssl/certs/root.crt")
 
 	return keyPath, certPath
 }
@@ -18,7 +18,7 @@ func LoadRootPaths() (string, string) {
 func LoadTrustChain(keyPath string, certPath string) x509.CertPool {
 	caCert, err := os.ReadFile(certPath)
 	if err != nil {
-		log.Fatal("[arbiter] Could not load CA key pair:", err)
+		log.Fatal("[arbiter] Could not load CA certificate:", err)
 	}
 
 	caCertPool := x509.NewCertPool()
@@ -27,13 +27,14 @@ func LoadTrustChain(keyPath string, certPath string) x509.CertPool {
 		log.Fatal("[arbiter] Could not append CA certificate to pool")
 	}
 
+	log.Println("[arbiter] Loaded CA certificate from:", certPath)
 	return *caCertPool
 }
 
-func ensureValidEnv(name string) string {
-	out := os.Getenv(name)
+func pickOr(env string, name string) string {
+	out := os.Getenv(env)
 	if strings.TrimSpace(out) == "" {
-		log.Fatal("[arbiter] Missing ", name, " environment variable")
+		return name
 	}
 
 	return out
