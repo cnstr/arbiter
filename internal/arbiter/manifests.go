@@ -20,6 +20,11 @@ type Manifest struct {
 	Aliases   []string `json:"aliases"`
 }
 
+type Payload struct {
+	AssignedManifests []Manifest
+	FastTrack         bool
+}
+
 func fetchManifests() []Manifest {
 	url := "https://source.canister.me/index-repositories.json"
 
@@ -48,6 +53,9 @@ func fetchManifests() []Manifest {
 	return manifests
 }
 
+// Is there a better way to pass state into gocron?
+var FastTrack bool = false
+
 func ScheduleManifests(PeerStore *PeerStore) (chan bool, gocron.Job) {
 	stop := make(chan bool)
 	sched, err := gocron.NewScheduler()
@@ -65,8 +73,11 @@ func ScheduleManifests(PeerStore *PeerStore) (chan bool, gocron.Job) {
 				log.Println("[scheduler] Could not fetch manifests")
 			}
 
-			// Write to all peers with their conn
-			// This will be a blocking operation
+			if FastTrack {
+				log.Println("[scheduler] Fast tracking manifests")
+			}
+
+			count := 0
 			for _, peer := range PeerStore.PeerArray {
 				if peer.State != Ready {
 					continue
@@ -77,8 +88,19 @@ func ScheduleManifests(PeerStore *PeerStore) (chan bool, gocron.Job) {
 					continue
 				}
 
-				peer.Connection.WriteJSON(peer.AssignedManifests)
+				peer.Connection.WriteJSON(&Payload{
+					AssignedManifests: peer.AssignedManifests,
+					FastTrack:         FastTrack,
+				})
+
 				log.Println("[scheduler] Sent manifests to:", peer.Id)
+				count++
+			}
+
+			FastTrack = false
+			if count == 0 {
+				// TODO: Sentry Error here, this is probably bad
+				log.Println("[scheduler] No peers to send manifests to")
 			}
 		}),
 		gocron.WithSingletonMode(gocron.LimitModeReschedule),

@@ -33,6 +33,11 @@ func StartServer() {
 			}
 
 			if r.Method == http.MethodPost {
+				// Check for query parameter fast=true
+				if r.URL.Query().Get("fast") == "true" {
+					FastTrack = true
+				}
+
 				err := job.RunNow()
 				if err != nil {
 					log.Println("[scheduler] Could not run job:", err)
