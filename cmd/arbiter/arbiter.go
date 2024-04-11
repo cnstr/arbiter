@@ -9,6 +9,7 @@ import (
 func main() {
 	utils.GetRuntimeVersion()
 	client := typesense.CreateClient()
+	typesense.EnsureApiKey(client)
 	typesense.EnsureCollections(client)
 	arbiter.StartServer()
 }

@@ -19,9 +19,12 @@ func loadEnvOrFatal(key string) string {
 }
 
 func CreateClient() *typesense.Client {
+	serverHost := loadEnvOrFatal("TYPESENSE_HOST")
+	privateKey := loadEnvOrFatal("TYPESENSE_PRIVATE_API_KEY")
+
 	client := typesense.NewClient(
-		typesense.WithServer("http://localhost:7700"),
-		typesense.WithAPIKey("typesense"),
+		typesense.WithServer(serverHost),
+		typesense.WithAPIKey(privateKey),
 		typesense.WithConnectionTimeout(5*time.Second),
 	)
 
