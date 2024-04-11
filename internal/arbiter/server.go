@@ -8,6 +8,14 @@ import (
 	"github.com/cnstr/arbiter/v2/internal/utils"
 )
 
+type Status struct {
+	SchedulingStatus struct {
+		LastRun string
+		NextRun string
+	}
+	Peers []*Peer
+}
+
 // TODO: We want to turn this into a raft based peering system
 // Over time I'll start implementing this and making the indexer in go
 func StartServer() {
@@ -53,7 +61,33 @@ func StartServer() {
 
 			// Return the peers as a JSON response
 			peers := peerStore.GetAllPeers()
-			data, err := json.Marshal(peers)
+
+			lastRun, err := job.LastRun()
+			if err != nil {
+				log.Println("[http] Could not get last run:", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("Internal Server Error"))
+				return
+			}
+
+			nextRun, err := job.NextRun()
+			if err != nil {
+				log.Println("[http] Could not get next run:", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("Internal Server Error"))
+				return
+			}
+
+			data, err := json.Marshal(&Status{
+				SchedulingStatus: struct {
+					LastRun string
+					NextRun string
+				}{
+					LastRun: lastRun.Format("2006-01-02 15:04:05"),
+					NextRun: nextRun.Format("2006-01-02 15:04:05"),
+				},
+				Peers: peers,
+			})
 			if err != nil {
 				log.Println("[http] Could not marshal peers:", err)
 				w.WriteHeader(http.StatusInternalServerError)
