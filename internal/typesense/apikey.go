@@ -5,12 +5,13 @@ import (
 	"log"
 	"strings"
 
+	"github.com/cnstr/arbiter/v2/internal/utils"
 	"github.com/typesense/typesense-go/typesense"
 	"github.com/typesense/typesense-go/typesense/api"
 )
 
 func EnsureApiKey(client *typesense.Client) bool {
-	desiredApiKey := loadEnvOrFatal("TYPESENSE_PUBLIC_API_KEY")
+	desiredApiKey := utils.LoadEnvOrFatal("TYPESENSE_PUBLIC_API_KEY")
 	keys, err := client.Keys().Retrieve(context.Background())
 	if err != nil {
 		log.Println("[typesense] Error retrieving API keys:", err)

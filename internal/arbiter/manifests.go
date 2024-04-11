@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/cnstr/arbiter/v2/internal/database"
 	"github.com/go-co-op/gocron/v2"
 )
 
@@ -53,6 +54,15 @@ func fetchManifests() []Manifest {
 	return manifests
 }
 
+func GetManifestIds(manifests []Manifest) []string {
+	var ids []string
+	for _, manifest := range manifests {
+		ids = append(ids, manifest.Id)
+	}
+
+	return ids
+}
+
 // Is there a better way to pass state into gocron?
 var FastTrack bool = false
 
@@ -76,6 +86,15 @@ func ScheduleManifests(PeerStore *PeerStore) (chan bool, gocron.Job) {
 			if FastTrack {
 				log.Println("[scheduler] Fast tracking manifests")
 			}
+
+			conn := database.CreateClient()
+			if conn == nil {
+				log.Println("[scheduler] Could not create database client")
+				return
+			}
+
+			database.PruneStaleData(conn, GetManifestIds(manifests))
+			database.CloseClient(conn)
 
 			count := 0
 			for _, peer := range PeerStore.PeerArray {

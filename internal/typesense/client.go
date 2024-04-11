@@ -3,24 +3,15 @@ package typesense
 import (
 	"context"
 	"log"
-	"os"
 	"time"
 
 	"github.com/typesense/typesense-go/typesense"
+	"github.com/cnstr/arbiter/v2/internal/utils"
 )
 
-func loadEnvOrFatal(key string) string {
-	value, ok := os.LookupEnv(key)
-	if !ok {
-		log.Fatalf("[typesense] %s is required", key)
-	}
-
-	return value
-}
-
 func CreateClient() *typesense.Client {
-	serverHost := loadEnvOrFatal("TYPESENSE_HOST")
-	privateKey := loadEnvOrFatal("TYPESENSE_PRIVATE_API_KEY")
+	serverHost := utils.LoadEnvOrFatal("TYPESENSE_HOST")
+	privateKey := utils.LoadEnvOrFatal("TYPESENSE_PRIVATE_API_KEY")
 
 	client := typesense.NewClient(
 		typesense.WithServer(serverHost),
