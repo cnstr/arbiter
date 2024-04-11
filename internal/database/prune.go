@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func PruneStaleData(Client *pgx.Conn, Ids []string) {
+func PruneStaleData(Client *pgxpool.Pool, Ids []string) {
 	rows, err := Client.Query(
 		context.Background(),
 		"UPDATE repository SET visible = false WHERE id != ALL($1)",

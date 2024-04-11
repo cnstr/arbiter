@@ -5,12 +5,12 @@ import (
 	"log"
 
 	"github.com/cnstr/arbiter/v2/internal/utils"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func CreateClient() *pgx.Conn {
+func CreateClient() *pgxpool.Pool {
 	connectionUrl := utils.LoadEnvOrFatal("POSTGRES_URL")
-	conn, err := pgx.Connect(context.Background(), connectionUrl)
+	conn, err := pgxpool.New(context.Background(), connectionUrl)
 	if err != nil {
 		log.Println("[database] Failed to connect to the database:", err)
 		return nil
@@ -19,6 +19,6 @@ func CreateClient() *pgx.Conn {
 	return conn
 }
 
-func CloseClient(conn *pgx.Conn) {
-	conn.Close(context.Background())
+func CloseClient(conn *pgxpool.Pool) {
+	conn.Close()
 }

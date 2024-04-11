@@ -1,5 +1,7 @@
 package arbiter
 
+// TODO: Uptime report to betteruptime
+
 import (
 	"encoding/json"
 	"log"
