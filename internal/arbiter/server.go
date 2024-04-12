@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/cnstr/arbiter/v2/internal/utils"
+	"github.com/gorilla/websocket"
 )
 
 type Status struct {
@@ -39,6 +40,23 @@ func StartServer() {
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/connect" {
 				wsHandler(w, r)
+				return
+			}
+
+			if r.Method == http.MethodPost && r.URL.Path == "/update" {
+				for _, peer := range peerStore.GetAllPeers() {
+					err := peer.Connection.WriteMessage(
+						websocket.TextMessage,
+						[]byte("cmd:shutdown"),
+					)
+
+					if err != nil {
+						log.Println("[http] Could not send shutdown command to:", peer.Id)
+					}
+				}
+
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("OK"))
 				return
 			}
 

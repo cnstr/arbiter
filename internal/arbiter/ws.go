@@ -62,7 +62,6 @@ func GetHandlerFunc(PeerStore *PeerStore) func(w http.ResponseWriter, r *http.Re
 					PeerStore.UpdatePeerState(cert.SerialNumber.String(), Disconnected)
 					break
 				}
-
 			}
 		}()
 	}
