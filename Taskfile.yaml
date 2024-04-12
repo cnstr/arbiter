@@ -13,4 +13,6 @@ tasks:
       TYPESENSE_HOST: 'http://localhost:7700'
       POSTGRES_URL: 'postgresql://cnstr:pg@localhost:5432/cnstr'
     cmds:
-      - go run ./cmd/arbiter
+      - cmd: docker compose -p canister up -d
+      - defer: docker compose -p canister down
+      - cmd: go run ./cmd/arbiter

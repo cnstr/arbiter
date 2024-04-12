@@ -1,0 +1,31 @@
+version: '3'
+services:
+  database:
+    image: postgres:15-alpine
+    container_name: canister-db
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: pg
+      POSTGRES_USER: cnstr
+      POSTGRES_DB: cnstr
+    volumes:
+      - db:/var/lib/postgresql/data
+  search:
+    image: typesense/typesense:26.0
+    container_name: canister-typesense
+    ports:
+      - 7700:7700
+    environment:
+      TYPESENSE_API_ADDRESS: 0.0.0.0
+      TYPESENSE_API_PORT: "7700"
+      TYPESENSE_PEERING_PORT: "7701"
+      TYPESENSE_RESET_PEERS_ON_ERROR: "true"
+      TYPESENSE_API_KEY: typesense
+      TYPESENSE_DATA_DIR: /data
+      TYPESENSE_ENABLE_CORS: "true"
+    volumes:
+      - typesense:/data
+volumes:
+  db:
+  typesense:
