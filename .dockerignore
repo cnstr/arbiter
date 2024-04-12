@@ -1,0 +1,9 @@
+certs/
+.git/
+Dockerfile
+.gitignore
+.dockerignore
+Taskfile.yaml
+compose.yaml
+README.md
+LICENSE
